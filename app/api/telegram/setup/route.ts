@@ -18,7 +18,7 @@ export async function GET() {
     );
   }
 
-  const webhookUrl = `${appUrl}/api/telegram/webhook`;
+  const webhookUrl = `${appUrl.replace(/\/+$/, "")}/api/telegram/webhook`;
 
   try {
     // Telegram API ga to'g'ridan-to'g'ri so'rov

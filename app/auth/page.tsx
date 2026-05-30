@@ -67,7 +67,9 @@ function AuthContent() {
       const data = await res.json();
       if (res.ok) {
         setStep("success");
-        setTimeout(() => router.push(from), 1500);
+        setTimeout(() => {
+          window.location.href = from;
+        }, 1500);
       } else {
         setError(data.error || "Noto'g'ri kod. Qayta urinib ko'ring.");
         setCode(["", "", "", "", "", ""]);

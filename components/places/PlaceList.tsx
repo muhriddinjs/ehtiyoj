@@ -15,6 +15,7 @@ type Props = {
   loading: boolean;
   type: "masjid" | "hojatxona";
   nearest?: number;
+  onPlaceClick?: (place: Place) => void;
 };
 
 const TAG_COLORS: Record<string, { bg: string; color: string }> = {
@@ -31,7 +32,7 @@ function distLabel(m: number): string {
   return m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
-export default function PlaceList({ places, loading, type, nearest }: Props) {
+export default function PlaceList({ places, loading, type, nearest, onPlaceClick }: Props) {
   const icon = type === "masjid" ? "🕌" : "🚻";
   const accentColor = type === "masjid" ? "#34D399" : "#38BDF8";
 
@@ -93,6 +94,7 @@ export default function PlaceList({ places, loading, type, nearest }: Props) {
           <div
             key={place.id}
             className="card card-hover"
+            onClick={() => onPlaceClick?.(place)}
             style={{
               marginBottom: 10,
               padding: "14px 16px",

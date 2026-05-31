@@ -1,10 +1,11 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   turbopack: {},
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "t.me" },
-      { protocol: "https", hostname: "telegram.org" },
+      { protocol: "https" as const, hostname: "t.me" },
+      { protocol: "https" as const, hostname: "telegram.org" },
     ],
   },
 };

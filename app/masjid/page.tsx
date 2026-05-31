@@ -24,6 +24,7 @@ export default function MasjidPage() {
   const [distFilter, setDistFilter] = useState("Hammasi");
   const [tagFilter, setTagFilter] = useState("Hammasi");
   const [nearest, setNearest] = useState<Place | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
 
@@ -160,7 +161,8 @@ export default function MasjidPage() {
         {view === "map" && userLoc && (
           <div style={{ margin: "0 16px 8px" }}>
             <YandexMap lat={userLoc.lat} lon={userLoc.lon}
-              places={filtered.slice(0, 10)} type="masjid" nearest={nearest?.id} />
+              places={filtered.slice(0, 10)} type="masjid" nearest={nearest?.id}
+              selectedPlace={selectedPlace} />
           </div>
         )}
 
@@ -182,7 +184,12 @@ export default function MasjidPage() {
               📡 Joylashuv aniqlanmoqda...
             </div>
           ) : (
-            <PlaceList places={filtered} loading={loading} type="masjid" nearest={nearest?.id} />
+            <PlaceList places={filtered} loading={loading} type="masjid" nearest={nearest?.id}
+              onPlaceClick={(place) => {
+                setSelectedPlace(place);
+                setView("map");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }} />
           )}
         </div>
       </div>

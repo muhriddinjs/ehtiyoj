@@ -24,6 +24,7 @@ export default function ZaruratPage() {
   const [distFilter, setDistFilter] = useState("Hammasi");
   const [tagFilter, setTagFilter] = useState("Hammasi");
   const [nearest, setNearest] = useState<Place | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
 
@@ -252,6 +253,7 @@ export default function ZaruratPage() {
               places={filtered.slice(0, 10)}
               type="hojatxona"
               nearest={nearest?.id}
+              selectedPlace={selectedPlace}
             />
           </div>
         )}
@@ -310,6 +312,11 @@ export default function ZaruratPage() {
               loading={loading}
               type="hojatxona"
               nearest={nearest?.id}
+              onPlaceClick={(place) => {
+                setSelectedPlace(place);
+                setView("map");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
             />
           )}
         </div>

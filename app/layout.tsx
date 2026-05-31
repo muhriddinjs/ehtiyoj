@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import PWARegister from "@/components/PWARegister";
 
 export const metadata: Metadata = {
   title: "EXTIYOJ — Qibla, Masjid va Zarurat",
@@ -52,6 +53,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body>
+        <PWARegister />
         <div id="app-root">{children}</div>
       </body>
     </html>

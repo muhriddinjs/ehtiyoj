@@ -17,6 +17,7 @@ type Props = {
   places: Place[];
   type: "masjid" | "hojatxona";
   nearest?: number;
+  selectedPlace?: Place | null;
 };
 
 declare global {
@@ -25,9 +26,10 @@ declare global {
   }
 }
 
-export default function YandexMap({ lat, lon, places, type, nearest }: Props) {
+export default function YandexMap({ lat, lon, places, type, nearest, selectedPlace }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const placemarkRefs = useRef<Map<number, any>>(new Map());
   const [loaded, setLoaded] = useState(false);
 
   const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY || "";
@@ -112,15 +114,31 @@ export default function YandexMap({ lat, lon, places, type, nearest }: Props) {
         }
       );
       mapInstanceRef.current.geoObjects.add(placemark);
+      placemarkRefs.current.set(place.id, placemark);
     });
 
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.destroy();
         mapInstanceRef.current = null;
+        placemarkRefs.current.clear();
       }
     };
   }, [loaded, lat, lon, places, type, nearest]);
+
+  // Tanlangan joyga o'tish
+  useEffect(() => {
+    if (!selectedPlace || !mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+    map.setCenter([selectedPlace.lat, selectedPlace.lon], 17, {
+      duration: 500,
+    });
+    // Balloon ochish
+    const placemark = placemarkRefs.current.get(selectedPlace.id);
+    if (placemark) {
+      placemark.balloon.open();
+    }
+  }, [selectedPlace]);
 
   if (!loaded) {
     return (

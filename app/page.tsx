@@ -894,7 +894,7 @@ function TasbehScreen() {
 
       {syncing && (
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 12, display: "flex", alignItems: "center", gap: 5 }}>
-          <WifiHigh size={12} weight="bold" />
+          <WifiSlash size={12} weight="bold" />
           Saqlanmoqda...
         </div>
       )}

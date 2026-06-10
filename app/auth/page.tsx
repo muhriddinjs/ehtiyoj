@@ -6,7 +6,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/zarurat";
+  const rawFrom = searchParams.get("from") || "/";
+  const from = rawFrom.startsWith("/") && !rawFrom.startsWith("//") ? rawFrom : "/";
 
   const [step, setStep] = useState<"intro" | "otp" | "success">("intro");
   const [code, setCode] = useState(["", "", "", "", "", ""]);
@@ -91,7 +92,7 @@ function AuthContent() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         background: "var(--bg)",
         display: "flex",
         flexDirection: "column",
@@ -126,7 +127,7 @@ function AuthContent() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            minHeight: "100vh",
+            minHeight: "100dvh",
             width: "100%",
             gap: 0,
           }}
@@ -297,7 +298,7 @@ function AuthContent() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            minHeight: "100vh",
+            minHeight: "100dvh",
             width: "100%",
           }}
         >
@@ -438,7 +439,7 @@ function AuthContent() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            minHeight: "100vh",
+            minHeight: "100dvh",
           }}
         >
           <div

@@ -3,21 +3,14 @@ import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 
 export const metadata: Metadata = {
-  title: "EXTIYOJ — Qibla, Masjid va Zarurat",
+  title: "Ehtiyoj — Xarita, Qibla, Tasbeh",
   description:
-    "Qibla yo'nalishi, yaqin masjidlar, hojatxonalar va namoz vaqtlari. Musulmonlar uchun qulay mobil ilova.",
+    "Yaqin masjidlar, hojatxonalar, qibla yo'nalishi va tasbeh. Musulmonlar uchun qulay mobil ilova.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
-    title: "EXTIYOJ",
-  },
-  keywords: ["qibla", "masjid", "namoz", "extiyoj", "hojatxona", "tasbex"],
-  authors: [{ name: "EXTIYOJ Team" }],
-  openGraph: {
-    title: "EXTIYOJ",
-    description: "Qibla, Masjid, Zarurat — musulmonlar uchun",
-    type: "website",
+    statusBarStyle: "default",
+    title: "Ehtiyoj",
   },
 };
 
@@ -26,7 +19,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#040D1F",
+  themeColor: "#F8FAFC",
 };
 
 export default function RootLayout({
@@ -35,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="uz" className="dark">
+    <html lang="uz" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -44,17 +37,16 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body>
-        <PWARegister />
-        <div id="app-root">{children}</div>
+      <body className="font-sans">
+        <div id="app-shell">
+          <PWARegister />
+          {children}
+        </div>
       </body>
     </html>
   );

@@ -18,7 +18,8 @@ import {
   Bell,
   Info,
   ArrowRight,
-  CaretRight
+  CaretRight,
+  WifiHigh
 } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import PlaceList from "@/components/places/PlaceList";
@@ -893,7 +894,7 @@ function TasbehScreen() {
 
       {syncing && (
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 12, display: "flex", alignItems: "center", gap: 5 }}>
-          <Wifi size={12} weight="bold" />
+          <WifiHigh size={12} weight="bold" />
           Saqlanmoqda...
         </div>
       )}

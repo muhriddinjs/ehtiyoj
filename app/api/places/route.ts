@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
     const data = await res.json();
 
     const places = data.elements
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((el: any) => {
         const elLat = el.lat ?? el.center?.lat;
         const elLon = el.lon ?? el.center?.lon;
@@ -116,6 +117,7 @@ export async function GET(req: NextRequest) {
         };
       })
       .filter(Boolean)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .sort((a: any, b: any) => a.distM - b.distM)
       .slice(0, 25);
 

@@ -1,14 +1,17 @@
 {
-  "name": "EXTIYOJ",
-  "short_name": "EXTIYOJ",
-  "description": "Qibla, Masjid, Zarurat — musulmonlar uchun",
+  "name": "Ehtiyoj - Xarita",
+  "short_name": "Ehtiyoj",
+  "description": "Yaqin hojatxonalar va masjidlarni topish uchun qulay xarita ilovasi.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#040D1F",
   "theme_color": "#040D1F",
   "orientation": "portrait",
   "lang": "uz",
-  "categories": ["lifestyle", "utilities"],
+  "categories": [
+    "lifestyle",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/icons/icon-72.png",
@@ -58,13 +61,23 @@
       "name": "Qibla",
       "short_name": "Qibla",
       "url": "/",
-      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Masjidlar",
       "short_name": "Masjid",
       "url": "/masjid",
-      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ]
 }

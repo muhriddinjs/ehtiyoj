@@ -269,7 +269,7 @@ function AuthContent() {
               onClick={openBot}
               style={{ marginTop: 8 }}
             >
-              Telegram botga o'tish →
+              Telegram botga o&apos;tish →
             </button>
           </div>
 
@@ -462,7 +462,7 @@ function AuthContent() {
             Muvaffaqiyatli!
           </h2>
           <p style={{ fontSize: 14, color: "var(--muted)" }}>
-            Kirish yakunlandi. Yo'naltirilmoqda...
+            Kirish yakunlandi. Yo&apos;naltirilmoqda...
           </p>
         </div>
       )}

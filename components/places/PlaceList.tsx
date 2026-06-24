@@ -78,7 +78,7 @@ export default function PlaceList({ places, loading, type, nearest, onPlaceClick
         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
           Hech narsa topilmadi
         </div>
-        <div style={{ fontSize: 13 }}>Qidiruv yoki filtrni o'zgartiring</div>
+        <div style={{ fontSize: 13 }}>Qidiruv yoki filtrni o&apos;zgartiring</div>
       </div>
     );
   }

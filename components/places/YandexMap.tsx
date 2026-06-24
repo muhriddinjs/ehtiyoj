@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useEffect, useRef, useState } from "react";
 
 type Place = {
@@ -61,6 +63,8 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
   // Xaritani yaratish
   useEffect(() => {
     if (!loaded || !mapRef.current) return;
+    
+    const currentPlacemarkRefs = placemarkRefs.current;
 
     // Eski xaritani tozalash
     if (mapInstanceRef.current) {
@@ -121,7 +125,7 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
       if (mapInstanceRef.current) {
         mapInstanceRef.current.destroy();
         mapInstanceRef.current = null;
-        placemarkRefs.current.clear();
+        currentPlacemarkRefs.clear();
       }
     };
   }, [loaded, lat, lon, places, type, nearest]);

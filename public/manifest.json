@@ -1,16 +1,17 @@
 {
-  "name": "Ehtiyoj - Xarita",
+  "name": "Ehtiyoj - Yaqin joylar xaritasi",
   "short_name": "Ehtiyoj",
   "description": "Yaqin hojatxonalar va masjidlarni topish uchun qulay xarita ilovasi.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#040D1F",
-  "theme_color": "#040D1F",
+  "background_color": "#F8FAFC",
+  "theme_color": "#059669",
   "orientation": "portrait",
   "lang": "uz",
   "categories": [
     "lifestyle",
-    "utilities"
+    "utilities",
+    "navigation"
   ],
   "icons": [
     {
@@ -58,8 +59,8 @@
   ],
   "shortcuts": [
     {
-      "name": "Qibla",
-      "short_name": "Qibla",
+      "name": "Hojatxonalar",
+      "short_name": "WC",
       "url": "/",
       "icons": [
         {
@@ -71,7 +72,7 @@
     {
       "name": "Masjidlar",
       "short_name": "Masjid",
-      "url": "/masjid",
+      "url": "/",
       "icons": [
         {
           "src": "/icons/icon-96.png",

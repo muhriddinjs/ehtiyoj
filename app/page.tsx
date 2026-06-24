@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  MapTrifold,
+  Toilet,
   UserCircle,
   ArrowsClockwise,
   MapPin,
@@ -14,10 +14,50 @@ import {
   Info,
   ArrowRight,
   CaretRight,
-  WifiHigh
+  Plus,
+  X,
+  PaperPlaneTilt,
+  CheckCircle,
+  NavigationArrow,
 } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import PlaceList from "@/components/places/PlaceList";
+
+// Custom Mosque SVG icon — Phosphor da Mosque yo'q
+function MosqueIcon({ size = 24, weight = "regular", style }: { size?: number; weight?: string; style?: React.CSSProperties }) {
+  const isFill = weight === "fill" || weight === "duotone";
+  return (
+    <svg width={size} height={size} viewBox="0 0 256 256" fill="none" style={style}>
+      {isFill ? (
+        <>
+          {/* Filled mosque */}
+          <path d="M128 24C104 24 80 56 80 80V96H48V80a8 8 0 0 0-16 0v16H24a8 8 0 0 0-8 8v96a8 8 0 0 0 8 8h80v-40a24 24 0 0 1 48 0v40h80a8 8 0 0 0 8-8V104a8 8 0 0 0-8-8h-8V80a8 8 0 0 0-16 0v16h-32V80c0-24-24-56-48-56Z" fill="currentColor"/>
+          {/* Dome */}
+          <path d="M128 24c-24 0-48 32-48 56h96c0-24-24-56-48-56Z" fill="currentColor" opacity="0.85"/>
+          {/* Minaret left */}
+          <rect x="36" y="56" width="12" height="40" rx="4" fill="currentColor"/>
+          <circle cx="42" cy="50" r="6" fill="currentColor"/>
+          {/* Minaret right */}
+          <rect x="208" y="56" width="12" height="40" rx="4" fill="currentColor"/>
+          <circle cx="214" cy="50" r="6" fill="currentColor"/>
+          {/* Crescent */}
+          <path d="M132 32a10 10 0 1 1-8 16 12 12 0 0 0 8-16Z" fill="currentColor" opacity="0.7"/>
+        </>
+      ) : (
+        <>
+          {/* Outlined mosque */}
+          <path d="M128 28c-20 0-44 28-44 52v16H48V80a8 8 0 0 0-16 0v16H24a8 8 0 0 0-8 8v92a8 8 0 0 0 8 8h80v-36a24 24 0 0 1 48 0v36h80a8 8 0 0 0 8-8V104a8 8 0 0 0-8-8h-8V80a8 8 0 0 0-16 0v16h-36V80c0-24-24-52-44-52Z" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
+          {/* Minaret left */}
+          <rect x="37" y="58" width="10" height="38" rx="3" stroke="currentColor" strokeWidth="8"/>
+          <circle cx="42" cy="50" r="5" stroke="currentColor" strokeWidth="6"/>
+          {/* Minaret right */}
+          <rect x="209" y="58" width="10" height="38" rx="3" stroke="currentColor" strokeWidth="8"/>
+          <circle cx="214" cy="50" r="5" stroke="currentColor" strokeWidth="6"/>
+        </>
+      )}
+    </svg>
+  );
+}
 
 // Yandex Map ni client-side dynamic import
 const YandexMap = dynamic(() => import("@/components/places/YandexMap"), {
@@ -25,7 +65,7 @@ const YandexMap = dynamic(() => import("@/components/places/YandexMap"), {
   loading: () => (
     <div
       className="shimmer"
-      style={{ height: 240, borderRadius: 20, border: "1px solid var(--border)" }}
+      style={{ height: "55vh", borderRadius: 20, border: "1px solid var(--border)" }}
     />
   ),
 });
@@ -33,8 +73,7 @@ const YandexMap = dynamic(() => import("@/components/places/YandexMap"), {
 // ============================================================
 // Types
 // ============================================================
-type Tab = "xarita" | "profil";
-type PlaceType = "masjid" | "hojatxona";
+type Tab = "hojatxona" | "masjid" | "profil";
 
 type Place = {
   id: number;
@@ -46,12 +85,11 @@ type Place = {
   address: string;
 };
 
-
 // ============================================================
 // Main App Shell
 // ============================================================
 export default function AppShell() {
-  const [activeTab, setActiveTab] = useState<Tab>("xarita");
+  const [activeTab, setActiveTab] = useState<Tab>("hojatxona");
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -85,8 +123,9 @@ export default function AppShell() {
           WebkitOverflowScrolling: "touch",
         } as React.CSSProperties}
       >
-        {activeTab === "xarita" && <XaritaScreen />}
-                {activeTab === "profil" && <ProfilScreen dark={dark} onToggle={toggleTheme} />}
+        {activeTab === "hojatxona" && <MapScreen type="hojatxona" />}
+        {activeTab === "masjid" && <MapScreen type="masjid" />}
+        {activeTab === "profil" && <ProfilScreen dark={dark} onToggle={toggleTheme} />}
       </main>
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
@@ -103,21 +142,33 @@ function BottomNav({
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
 }) {
-  const tabs: { id: Tab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
+  const tabs: { id: Tab; label: string; icon: (active: boolean) => React.ReactNode; color: string }[] = [
     {
-      id: "xarita",
-      label: "Xarita",
+      id: "hojatxona",
+      label: "Hojatxona",
+      color: "#0EA5E9",
       icon: (active) => (
-        <MapTrifold
+        <Toilet
           size={24}
           weight={active ? "fill" : "regular"}
         />
       ),
     },
-    
+    {
+      id: "masjid",
+      label: "Masjidlar",
+      color: "#059669",
+      icon: (active) => (
+        <MosqueIcon
+          size={24}
+          weight={active ? "fill" : "regular"}
+        />
+      ),
+    },
     {
       id: "profil",
       label: "Profil",
+      color: "#059669",
       icon: (active) => (
         <UserCircle
           size={24}
@@ -144,6 +195,7 @@ function BottomNav({
       <div style={{ display: "flex" }}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
+          const activeColor = tab.color;
           return (
             <button
               key={tab.id}
@@ -163,7 +215,7 @@ function BottomNav({
                 cursor: "pointer",
                 fontFamily: "inherit",
                 transition: "color 0.15s",
-                color: isActive ? "#059669" : "var(--muted)",
+                color: isActive ? activeColor : "var(--muted)",
                 position: "relative",
               }}
               aria-label={tab.label}
@@ -180,7 +232,7 @@ function BottomNav({
                     width: 4,
                     height: 4,
                     borderRadius: "50%",
-                    background: "#059669",
+                    background: activeColor,
                   }}
                 />
               )}
@@ -198,10 +250,9 @@ function BottomNav({
 }
 
 // ============================================================
-// Screen: Xarita
+// Shared Map Screen — type parametriga qarab masjid yoki hojatxona
 // ============================================================
-function XaritaScreen() {
-  const [placeType, setPlaceType] = useState<PlaceType>("hojatxona");
+function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -209,15 +260,20 @@ function XaritaScreen() {
   const [userLon, setUserLon] = useState<number | null>(null);
   const [locationError, setLocationError] = useState("");
   const [source, setSource] = useState<"osm" | "fallback" | "">("");
+  const [showSuggest, setShowSuggest] = useState(false);
+
+  const isHojatxona = type === "hojatxona";
+  const accentColor = isHojatxona ? "#0EA5E9" : "#059669";
+  const title = isHojatxona ? "Yaqin hojatxonalar" : "Yaqin masjidlar";
 
   const fetchPlaces = useCallback(
-    async (lat: number, lon: number, type: PlaceType) => {
+    async (lat: number, lon: number, placeType: string) => {
       setLoading(true);
       setPlaces([]);
       setSelectedPlace(null);
       try {
         const res = await fetch(
-          `/api/places?lat=${lat}&lon=${lon}&type=${type === "hojatxona" ? "hojatxona" : "masjid"}`
+          `/api/places?lat=${lat}&lon=${lon}&type=${placeType}`
         );
         const data = await res.json();
         setPlaces(data.places || []);
@@ -234,7 +290,7 @@ function XaritaScreen() {
   const getLocation = useCallback(() => {
     setLocationError("");
     if (!navigator.geolocation) {
-      setLocationError("Geolokatsiya qo'llab-quvvatlanmaydi");
+      setLocationError("Geolokatsiya qo\u2018llab-quvvatlanmaydi");
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -242,7 +298,7 @@ function XaritaScreen() {
         const { latitude, longitude } = pos.coords;
         setUserLat(latitude);
         setUserLon(longitude);
-        fetchPlaces(latitude, longitude, placeType);
+        fetchPlaces(latitude, longitude, type);
       },
       () => {
         setLocationError("Joylashuv aniqlanmadi. Toshkent markazi ishlatilmoqda.");
@@ -250,11 +306,11 @@ function XaritaScreen() {
         const lon = 69.2401;
         setUserLat(lat);
         setUserLon(lon);
-        fetchPlaces(lat, lon, placeType);
+        fetchPlaces(lat, lon, type);
       },
       { timeout: 8000, enableHighAccuracy: false }
     );
-  }, [fetchPlaces, placeType]);
+  }, [fetchPlaces, type]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -262,31 +318,66 @@ function XaritaScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (userLat && userLon) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchPlaces(userLat, userLon, placeType);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [placeType]);
-
   const nearest = places.length > 0 ? places[0].id : undefined;
 
   return (
-    <div className="animate-fade-up" style={{ padding: "16px 16px 0" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px" }}>
-          Yaqin joylar
-        </h1>
+    <div className="animate-fade-up" style={{ display: "flex", flexDirection: "column" }}>
+      {/* Map — katta, ekranining yuqori yarmi */}
+      <div style={{ position: "relative" }}>
+        {userLat && userLon ? (
+          <YandexMap
+            lat={userLat}
+            lon={userLon}
+            places={places}
+            type={type}
+            nearest={nearest}
+            selectedPlace={selectedPlace}
+            height="55vh"
+          />
+        ) : (
+          <div
+            className="shimmer"
+            style={{ height: "55vh", borderRadius: 0, border: "none" }}
+          />
+        )}
+
+        {/* Overlay: Location error */}
+        {locationError && (
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              right: 12,
+              background: "rgba(251,191,36,0.95)",
+              borderRadius: 12,
+              padding: "10px 14px",
+              fontSize: 12,
+              color: "#78350F",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              zIndex: 10,
+            }}
+          >
+            <MapPin size={15} weight="fill" style={{ flexShrink: 0 }} />
+            {locationError}
+          </div>
+        )}
+
+        {/* Overlay: Refresh button */}
         <button
           onClick={getLocation}
           disabled={loading}
           style={{
+            position: "absolute",
+            bottom: 14,
+            right: 14,
             background: "var(--surface)",
             border: "1px solid var(--border)",
-            borderRadius: 10,
-            padding: "8px 12px",
+            borderRadius: 12,
+            padding: "10px 14px",
             cursor: loading ? "not-allowed" : "pointer",
             display: "flex",
             alignItems: "center",
@@ -296,6 +387,8 @@ function XaritaScreen() {
             color: "var(--muted)",
             fontFamily: "inherit",
             opacity: loading ? 0.5 : 1,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+            zIndex: 10,
           }}
         >
           <ArrowsClockwise
@@ -305,119 +398,391 @@ function XaritaScreen() {
           />
           Yangilash
         </button>
-      </div>
 
-      {locationError && (
-        <div
-          style={{
-            background: "rgba(251,191,36,0.1)",
-            border: "1px solid rgba(251,191,36,0.25)",
-            borderRadius: 12,
-            padding: "10px 14px",
-            fontSize: 12,
-            color: "#D97706",
-            marginBottom: 12,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <MapPin size={15} weight="fill" style={{ flexShrink: 0, color: "#D97706" }} />
-          {locationError}
-        </div>
-      )}
-
-      {userLat && userLon && (
-        <div style={{ marginBottom: 14 }}>
-          <YandexMap
-            lat={userLat}
-            lon={userLon}
-            places={places}
-            type={placeType}
-            nearest={nearest}
-            selectedPlace={selectedPlace}
-          />
-        </div>
-      )}
-
-
-      {/* Type toggle */}
-      <div
-        style={{
-          display: "flex",
-          gap: 6,
-          marginBottom: 14,
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: 14,
-          padding: 4,
-        }}
-      >
-        {(["hojatxona", "masjid"] as PlaceType[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setPlaceType(t)}
+        {/* Fallback indicator */}
+        {source === "fallback" && (
+          <div
             style={{
-              flex: 1,
-              padding: "9px 0",
-              borderRadius: 11,
-              border: "none",
-              fontFamily: "inherit",
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: "pointer",
-              transition: "all 0.15s",
-              background:
-                placeType === t
-                  ? t === "masjid"
-                    ? "linear-gradient(135deg, #059669, #34D399)"
-                    : "linear-gradient(135deg, #0EA5E9, #38BDF8)"
-                  : "transparent",
-              color: placeType === t ? "white" : "var(--muted)",
+              position: "absolute",
+              bottom: 14,
+              left: 14,
+              background: "rgba(0,0,0,0.7)",
+              borderRadius: 8,
+              padding: "6px 10px",
+              fontSize: 11,
+              color: "#94A3B8",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
+              gap: 5,
+              zIndex: 10,
             }}
           >
-            <span>{t === "masjid" ? "🕌" : "🚻"}</span>
-            {t === "masjid" ? "Masjidlar" : "Hojatxonalar"}
-          </button>
-        ))}
+            <WifiSlash size={12} weight="bold" />
+            Offline
+          </div>
+        )}
       </div>
 
+      {/* Content area — header + list */}
+      <div style={{ padding: "16px 16px 0" }}>
+        {/* Section header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: `${accentColor}18`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: accentColor,
+              }}
+            >
+              {isHojatxona ? <Toilet size={20} weight="duotone" /> : <MosqueIcon size={20} weight="fill" />}
+            </div>
+            <div>
+              <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.2 }}>
+                {title}
+              </h1>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                {loading ? "Qidirilmoqda..." : `${places.length} ta joy topildi`}
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {source === "fallback" && (
-        <div
+        <PlaceList
+          places={places}
+          loading={loading}
+          type={type}
+          nearest={nearest}
+          onPlaceClick={setSelectedPlace}
+        />
+      </div>
+
+      {/* FAB — Hojatxona qo'shish (faqat hojatxona tabida) */}
+      {isHojatxona && (
+        <button
+          onClick={() => setShowSuggest(true)}
           style={{
-            fontSize: 11,
-            color: "var(--muted)",
-            textAlign: "center",
-            marginBottom: 10,
+            position: "fixed",
+            bottom: 84,
+            right: "max(16px, calc(50% - 199px))",
+            width: 52,
+            height: 52,
+            borderRadius: "50%",
+            border: "none",
+            background: "linear-gradient(135deg, #0EA5E9, #38BDF8)",
+            boxShadow: "0 6px 24px rgba(14,165,233,0.4)",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 5,
+            color: "white",
+            zIndex: 40,
+            transition: "transform 0.15s, box-shadow 0.15s",
           }}
+          aria-label="Hojatxona qo'shish"
         >
-          <WifiSlash size={13} weight="bold" />
-          Offline ma&apos;lumotlar ko&apos;rsatilmoqda
-        </div>
+          <Plus size={24} weight="bold" />
+        </button>
       )}
 
-      <PlaceList
-        places={places}
-        loading={loading}
-        type={placeType}
-        nearest={nearest}
-        onPlaceClick={setSelectedPlace}
-      />
+      {/* Suggest Modal */}
+      {showSuggest && (
+        <SuggestModal
+          lat={userLat}
+          lon={userLon}
+          onClose={() => setShowSuggest(false)}
+        />
+      )}
     </div>
   );
 }
 
 // ============================================================
-// Screen: Profil — to'liq qayta yozildi
+// Suggest Modal — Yangi hojatxona taklifi
+// ============================================================
+function SuggestModal({
+  lat,
+  lon,
+  onClose,
+}: {
+  lat: number | null;
+  lon: number | null;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          note: note.trim(),
+          lat,
+          lon,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) throw new Error("Server xatoligi");
+      setSent(true);
+    } catch {
+      setError("Yuborishda xatolik. Qayta urinib ko\u2018ring.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 100,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+      }}
+    >
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          backdropFilter: "blur(4px)",
+        }}
+      />
+
+      {/* Modal */}
+      <div
+        className="animate-slide-up"
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 430,
+          background: "var(--surface)",
+          borderRadius: "24px 24px 0 0",
+          padding: "24px 20px",
+          paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+          border: "1px solid var(--border)",
+          borderBottom: "none",
+        }}
+      >
+        {/* Handle */}
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: "var(--border)", margin: "0 auto 20px" }} />
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            background: "var(--border)",
+            border: "none",
+            borderRadius: "50%",
+            width: 32,
+            height: 32,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "var(--muted)",
+          }}
+        >
+          <X size={16} weight="bold" />
+        </button>
+
+        {sent ? (
+          /* Success state */
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #059669, #34D399)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+                boxShadow: "0 8px 24px rgba(5,150,105,0.3)",
+              }}
+            >
+              <CheckCircle size={32} weight="fill" style={{ color: "white" }} />
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Rahmat!</h3>
+            <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
+              Taklifingiz qabul qilindi. Tekshiruvdan o&apos;tgach xaritaga qo&apos;shiladi.
+            </p>
+            <button
+              onClick={onClose}
+              className="btn-primary"
+              style={{ marginTop: 20, maxWidth: 200, marginLeft: "auto", marginRight: "auto" }}
+            >
+              Yopish
+            </button>
+          </div>
+        ) : (
+          /* Form */
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  background: "rgba(14,165,233,0.12)",
+                  border: "1px solid rgba(14,165,233,0.2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#0EA5E9",
+                  flexShrink: 0,
+                }}
+              >
+                <Plus size={22} weight="bold" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 2 }}>Hojatxona qo&apos;shish</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)" }}>Yangi joyni xaritaga taklif qiling</p>
+              </div>
+            </div>
+
+            {/* Name */}
+            <label style={{ display: "block", marginBottom: 14 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 6 }}>
+                Nomi *
+              </span>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Masalan: Mega Planet WC"
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  border: "1.5px solid var(--border)",
+                  background: "var(--bg)",
+                  color: "var(--text)",
+                  fontSize: 14,
+                  fontFamily: "inherit",
+                  outline: "none",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#0EA5E9"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+              />
+            </label>
+
+            {/* Location */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 14px",
+                borderRadius: 12,
+                background: "rgba(14,165,233,0.06)",
+                border: "1px solid rgba(14,165,233,0.15)",
+                marginBottom: 14,
+                fontSize: 13,
+                color: "var(--text)",
+              }}
+            >
+              <NavigationArrow size={16} weight="fill" style={{ color: "#0EA5E9", flexShrink: 0 }} />
+              <span>
+                {lat && lon
+                  ? `Joylashuv: ${lat.toFixed(4)}, ${lon.toFixed(4)}`
+                  : "Joylashuv aniqlanmadi"}
+              </span>
+            </div>
+
+            {/* Note */}
+            <label style={{ display: "block", marginBottom: 20 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 6 }}>
+                Izoh (ixtiyoriy)
+              </span>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Masalan: Metro bekatining ichida, 2-qavat"
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  border: "1.5px solid var(--border)",
+                  background: "var(--bg)",
+                  color: "var(--text)",
+                  fontSize: 14,
+                  fontFamily: "inherit",
+                  outline: "none",
+                  resize: "none",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#0EA5E9"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+              />
+            </label>
+
+            {error && (
+              <div
+                style={{
+                  background: "rgba(244,63,94,0.1)",
+                  border: "1px solid rgba(244,63,94,0.2)",
+                  borderRadius: 10,
+                  padding: "8px 12px",
+                  fontSize: 12,
+                  color: "#FB7185",
+                  marginBottom: 14,
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!name.trim() || sending}
+              className="btn-primary"
+              style={{
+                background: "linear-gradient(135deg, #0EA5E9, #38BDF8)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <PaperPlaneTilt size={18} weight="fill" />
+              {sending ? "Yuborilmoqda..." : "Taklif yuborish"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Screen: Profil
 // ============================================================
 
 // SettingsRow helper
@@ -429,7 +794,6 @@ function Row({
   subtitle,
   right,
   onClick,
-  danger,
 }: {
   icon: React.ReactNode;
   iconColor?: string;
@@ -438,7 +802,6 @@ function Row({
   subtitle?: string;
   right?: React.ReactNode;
   onClick?: () => void;
-  danger?: boolean;
 }) {
   return (
     <div
@@ -462,12 +825,12 @@ function Row({
           width: 36,
           height: 36,
           borderRadius: 10,
-          background: danger ? "rgba(239,68,68,0.1)" : iconBg,
+          background: iconBg,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          color: danger ? "#EF4444" : iconColor,
+          color: iconColor,
         }}
       >
         {icon}
@@ -478,7 +841,7 @@ function Row({
         <div style={{
           fontSize: 14,
           fontWeight: 600,
-          color: danger ? "#EF4444" : "var(--text)",
+          color: "var(--text)",
           lineHeight: 1.3,
         }}>
           {title}
@@ -507,7 +870,7 @@ function ProfilScreen({
   dark: boolean;
   onToggle: () => void;
 }) {
-    // Theme toggle switch
+  // Theme toggle switch
   const ThemeSwitch = (
     <button
       onClick={onToggle}
@@ -588,18 +951,19 @@ function ProfilScreen({
           justifyContent: "center",
           boxShadow: "0 4px 16px rgba(5,150,105,0.3)",
           flexShrink: 0,
+          color: "white",
         }}>
-          <span style={{ fontSize: 28 }}>🕌</span>
+          <MosqueIcon size={32} weight="fill" />
         </div>
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>EXTIYOJ</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>EHTIYOJ</div>
             <SealCheck size={18} weight="fill" style={{ color: "#059669" }} />
           </div>
           <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-            Muslmonlar uchun qulay ilova
+            Yaqin joylarni topish uchun ilova
           </div>
           <div style={{
             display: "inline-flex",
@@ -614,7 +978,7 @@ function ProfilScreen({
             fontWeight: 700,
             color: "#059669",
           }}>
-            v1.0.0
+            v2.0.0
           </div>
         </div>
       </div>
@@ -673,7 +1037,7 @@ function ProfilScreen({
             iconColor="#64748B"
             iconBg="rgba(100,116,139,0.1)"
             title="Versiya"
-            subtitle="EXTIYOJ v1.0.0 · Muhriddin tomonidan"
+            subtitle="EHTIYOJ v2.0.0 · Muhriddin tomonidan"
             right={<span />}
           />
           <div style={{ borderBottom: "none" }}>
@@ -689,6 +1053,6 @@ function ProfilScreen({
         </div>
       </div>
 
-      </div>
+    </div>
   );
 }

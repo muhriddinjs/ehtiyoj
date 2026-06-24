@@ -3,8 +3,9 @@ import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 
 export const metadata: Metadata = {
-  title: "Ehtiyoj — Yaqin joylar xaritasi",
-  description: "Yaqin hojatxonalar va masjidlarni topish uchun xarita dasturi.",
+  title: "Ehtiyoj — Yaqin hojatxonalar va masjidlar xaritasi",
+  description:
+    "Yaqin hojatxonalar va masjidlarni topish uchun qulay mobil xarita ilovasi.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

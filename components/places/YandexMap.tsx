@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useRef, useState } from "react";
+import { MapTrifold } from "@phosphor-icons/react";
 
 type Place = {
   id: number;
@@ -20,6 +21,7 @@ type Props = {
   type: "masjid" | "hojatxona";
   nearest?: number;
   selectedPlace?: Place | null;
+  height?: string;
 };
 
 declare global {
@@ -28,7 +30,7 @@ declare global {
   }
 }
 
-export default function YandexMap({ lat, lon, places, type, nearest, selectedPlace }: Props) {
+export default function YandexMap({ lat, lon, places, type, nearest, selectedPlace, height = "55vh" }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const placemarkRefs = useRef<Map<number, any>>(new Map());
@@ -149,25 +151,26 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
       <div
         className="shimmer"
         style={{
-          height: 240,
-          borderRadius: 20,
-          border: "1px solid var(--border)",
+          height,
+          borderRadius: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          flexDirection: "column",
+          gap: 10,
           color: "var(--muted)",
           fontSize: 13,
         }}
       >
-        🗺 Xarita yuklanmoqda...
+        <MapTrifold size={32} weight="duotone" style={{ color: "var(--muted)", opacity: 0.5 }} />
+        Xarita yuklanmoqda...
       </div>
     );
   }
 
   return (
     <div
-      className="map-container"
-      style={{ height: 240 }}
+      style={{ height, overflow: "hidden" }}
     >
       <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
     </div>

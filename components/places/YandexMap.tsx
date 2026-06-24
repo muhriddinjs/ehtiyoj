@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { MapTrifold } from "@phosphor-icons/react";
 
 type Place = {
@@ -14,6 +14,13 @@ type Place = {
   tags: string[];
 };
 
+export type RouteInfo = {
+  lengthM: number;
+  timeMin: number;
+  mode: "auto" | "pedestrian";
+  placeName: string;
+};
+
 type Props = {
   lat: number;
   lon: number;
@@ -21,6 +28,9 @@ type Props = {
   type: "masjid" | "hojatxona";
   nearest?: number;
   selectedPlace?: Place | null;
+  navigateTo?: Place | null;
+  routeMode?: "auto" | "pedestrian";
+  onRouteReady?: (info: RouteInfo | null) => void;
   height?: string;
 };
 
@@ -30,13 +40,26 @@ declare global {
   }
 }
 
-export default function YandexMap({ lat, lon, places, type, nearest, selectedPlace, height = "55vh" }: Props) {
+export default function YandexMap({
+  lat, lon, places, type, nearest,
+  selectedPlace, navigateTo, routeMode = "auto",
+  onRouteReady, height = "55vh",
+}: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const placemarkRefs = useRef<Map<number, any>>(new Map());
+  const routeRef = useRef<any>(null);
   const [loaded, setLoaded] = useState(false);
 
   const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY || "";
+
+  // Yo'nalishni tozalash
+  const clearRoute = useCallback(() => {
+    if (routeRef.current && mapInstanceRef.current) {
+      mapInstanceRef.current.geoObjects.remove(routeRef.current);
+      routeRef.current = null;
+    }
+  }, []);
 
   // Yandex Maps skriptini yuklash (bir marta)
   useEffect(() => {
@@ -80,6 +103,9 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
       zoom: 15,
       controls: ["zoomControl"],
       type: "yandex#map",
+    }, {
+      // POI (dokon, restoran, kafe...) interaktivligini o'chirish
+      yandexMapDisablePoiInteractivity: true,
     });
 
     // Xarita uslubi
@@ -87,25 +113,36 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
       suppressMapOpenBlock: true,
     });
 
-    // Foydalanuvchi pozitsiyasi
+    // Custom marker ikonkalari
+    const markerConfig = type === "masjid"
+      ? { normal: "/markers/mosque-marker.svg", active: "/markers/mosque-marker-active.svg" }
+      : { normal: "/markers/toilet-marker.svg", active: "/markers/toilet-marker-active.svg" };
+    const normalSize = [36, 48] as [number, number];
+    const activeSize = [40, 54] as [number, number];
+
+    // Foydalanuvchi pozitsiyasi — custom icon
     const userPlacemark = new ymaps.Placemark(
       [lat, lon],
       { hintContent: "Siz bu yerdasiz" },
       {
-        preset: "islands#blueDotIcon",
-        iconColor: "#38BDF8",
+        iconLayout: "default#image",
+        iconImageHref: "/markers/user-marker.svg",
+        iconImageSize: [24, 24],
+        iconImageOffset: [-12, -12],
+        zIndex: 1000,
       }
     );
     mapInstanceRef.current.geoObjects.add(userPlacemark);
 
-    // Joylar markerları
-    const color = type === "masjid" ? "#34D399" : "#38BDF8";
-
+    // Joylar markerları — custom SVG ikonkalar
     places.forEach((place) => {
       const isNearest = place.id === nearest;
       const dist = place.distM < 1000
         ? `${place.distM} m`
         : `${(place.distM / 1000).toFixed(1)} km`;
+
+      const iconSize = isNearest ? activeSize : normalSize;
+      const iconHref = isNearest ? markerConfig.active : markerConfig.normal;
 
       const placemark = new ymaps.Placemark(
         [place.lat, place.lon],
@@ -115,8 +152,11 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
           hintContent: place.name,
         },
         {
-          preset: isNearest ? "islands#redIcon" : "islands#blueIcon",
-          iconColor: isNearest ? "#F43F5E" : color,
+          iconLayout: "default#image",
+          iconImageHref: iconHref,
+          iconImageSize: iconSize,
+          iconImageOffset: [-iconSize[0] / 2, -iconSize[1]],
+          zIndex: isNearest ? 900 : 100,
         }
       );
       mapInstanceRef.current.geoObjects.add(placemark);
@@ -128,6 +168,7 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
         mapInstanceRef.current.destroy();
         mapInstanceRef.current = null;
         currentPlacemarkRefs.clear();
+        routeRef.current = null;
       }
     };
   }, [loaded, lat, lon, places, type, nearest]);
@@ -145,6 +186,90 @@ export default function YandexMap({ lat, lon, places, type, nearest, selectedPla
       placemark.balloon.open();
     }
   }, [selectedPlace]);
+
+  // Yo'nalish chizish
+  useEffect(() => {
+    if (!loaded || !mapInstanceRef.current) return;
+
+    // Eski yo'nalishni tozalash
+    clearRoute();
+
+    if (!navigateTo) {
+      onRouteReady?.(null);
+      return;
+    }
+
+    const ymaps = window.ymaps;
+    const map = mapInstanceRef.current;
+
+    const multiRoute = new ymaps.multiRouter.MultiRoute(
+      {
+        referencePoints: [
+          [lat, lon],
+          [navigateTo.lat, navigateTo.lon],
+        ],
+        params: {
+          routingMode: routeMode === "auto" ? "auto" : "pedestrian",
+          results: 1,
+        },
+      },
+      {
+        // Yo'nalish chizig'i uslubi
+        routeActiveStrokeWidth: 6,
+        routeActiveStrokeColor: routeMode === "auto" ? "#0EA5E9" : "#059669",
+        routeActiveStrokeStyle: "solid",
+        // Boshlang'ich va yakuniy nuqtalarni yashirish (bizda custom markerlar bor)
+        wayPointStartVisible: false,
+        wayPointFinishVisible: false,
+        // Oraliq nuqtalarni yashirish
+        pinVisible: false,
+        // Balloon va hint o'chirish
+        boundsAutoApply: true,
+      }
+    );
+
+    // Yo'nalish tayyor bo'lganda ma'lumotlarni olish
+    multiRoute.model.events.add("requestsuccess", () => {
+      try {
+        const activeRoute = multiRoute.getActiveRoute();
+        if (activeRoute) {
+          const props = activeRoute.properties.getAll();
+          const lengthM = Math.round(props.distance.value);
+          const timeSec = Math.round(props.duration.value);
+          const timeMin = Math.max(1, Math.round(timeSec / 60));
+
+          onRouteReady?.({
+            lengthM,
+            timeMin,
+            mode: routeMode,
+            placeName: navigateTo.name,
+          });
+        }
+      } catch {
+        // Ma'lumot olishda xatolik
+        onRouteReady?.({
+          lengthM: navigateTo.distM,
+          timeMin: Math.max(1, Math.round(navigateTo.distM / (routeMode === "auto" ? 500 : 80))),
+          mode: routeMode,
+          placeName: navigateTo.name,
+        });
+      }
+    });
+
+    map.geoObjects.add(multiRoute);
+    routeRef.current = multiRoute;
+
+    // Xaritani yo'nalishga moslashtirish
+    map.setBounds(
+      [
+        [Math.min(lat, navigateTo.lat) - 0.003, Math.min(lon, navigateTo.lon) - 0.003],
+        [Math.max(lat, navigateTo.lat) + 0.003, Math.max(lon, navigateTo.lon) + 0.003],
+      ],
+      { duration: 400, checkZoomRange: true }
+    );
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, navigateTo, routeMode, lat, lon, clearRoute]);
 
   if (!loaded) {
     return (

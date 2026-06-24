@@ -4,6 +4,7 @@ import {
   Toilet,
   MagnifyingGlass,
   MapPin,
+  NavigationArrow,
 } from "@phosphor-icons/react";
 
 // Custom Mosque SVG icon — re-export for PlaceList
@@ -36,6 +37,7 @@ type Props = {
   type: "masjid" | "hojatxona";
   nearest?: number;
   onPlaceClick?: (place: Place) => void;
+  onNavigate?: (place: Place) => void;
 };
 
 const TAG_COLORS: Record<string, { bg: string; color: string }> = {
@@ -53,7 +55,7 @@ function distLabel(m: number): string {
   return m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
-export default function PlaceList({ places, loading, type, nearest, onPlaceClick }: Props) {
+export default function PlaceList({ places, loading, type, nearest, onPlaceClick, onNavigate }: Props) {
   const isMasjid = type === "masjid";
   const accentColor = isMasjid ? "#34D399" : "#38BDF8";
   const gradientFrom = isMasjid ? "#059669" : "#0EA5E9";
@@ -261,6 +263,32 @@ export default function PlaceList({ places, loading, type, nearest, onPlaceClick
               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
                 {place.address || "Yaqin atrofda"}
               </div>
+              {/* Yo'nalish tugmasi */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate?.(place);
+                }}
+                style={{
+                  marginTop: 6,
+                  padding: "5px 10px",
+                  borderRadius: 8,
+                  border: `1.5px solid ${accentColor}40`,
+                  background: `${accentColor}10`,
+                  color: accentColor,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontFamily: "inherit",
+                  transition: "all 0.15s",
+                }}
+              >
+                <NavigationArrow size={12} weight="fill" />
+                Yo&apos;nalish
+              </button>
             </div>
           </div>
         );

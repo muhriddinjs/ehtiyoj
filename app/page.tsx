@@ -19,9 +19,12 @@ import {
   PaperPlaneTilt,
   CheckCircle,
   NavigationArrow,
+  Car,
+  PersonSimpleWalk,
 } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import PlaceList from "@/components/places/PlaceList";
+import type { RouteInfo } from "@/components/places/YandexMap";
 
 // Custom Mosque SVG icon — Phosphor da Mosque yo'q
 function MosqueIcon({ size = 24, weight = "regular", style }: { size?: number; weight?: string; style?: React.CSSProperties }) {
@@ -145,7 +148,7 @@ function BottomNav({
   const tabs: { id: Tab; label: string; icon: (active: boolean) => React.ReactNode; color: string }[] = [
     {
       id: "hojatxona",
-      label: "Hojatxona",
+      label: "Zarurat",
       color: "#0EA5E9",
       icon: (active) => (
         <Toilet
@@ -261,10 +264,13 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
   const [locationError, setLocationError] = useState("");
   const [source, setSource] = useState<"osm" | "fallback" | "">("");
   const [showSuggest, setShowSuggest] = useState(false);
+  const [navigateTarget, setNavigateTarget] = useState<Place | null>(null);
+  const [routeMode, setRouteMode] = useState<"auto" | "pedestrian">("pedestrian");
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
 
   const isHojatxona = type === "hojatxona";
   const accentColor = isHojatxona ? "#0EA5E9" : "#059669";
-  const title = isHojatxona ? "Yaqin hojatxonalar" : "Yaqin masjidlar";
+  const title = isHojatxona ? "Yaqin zaruratxonalar" : "Yaqin masjidlar";
 
   const fetchPlaces = useCallback(
     async (lat: number, lon: number, placeType: string) => {
@@ -332,6 +338,9 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
             type={type}
             nearest={nearest}
             selectedPlace={selectedPlace}
+            navigateTo={navigateTarget}
+            routeMode={routeMode}
+            onRouteReady={setRouteInfo}
             height="55vh"
           />
         ) : (
@@ -421,6 +430,138 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
             Offline
           </div>
         )}
+
+        {/* Yo'nalish info paneli */}
+        {navigateTarget && routeInfo && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 14,
+              left: 14,
+              right: 14,
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 16,
+              padding: "12px 14px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+              zIndex: 20,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            {/* Icon */}
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: `${accentColor}15`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: accentColor,
+                flexShrink: 0,
+              }}
+            >
+              <NavigationArrow size={20} weight="fill" />
+            </div>
+
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "var(--text)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {routeInfo.placeName}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                {routeInfo.lengthM < 1000
+                  ? `${routeInfo.lengthM} m`
+                  : `${(routeInfo.lengthM / 1000).toFixed(1)} km`}
+                {" • ~"}{routeInfo.timeMin} min
+                {" • "}{routeInfo.mode === "auto" ? "Mashina" : "Piyoda"}
+              </div>
+            </div>
+
+            {/* Transport mode toggle */}
+            <div
+              style={{
+                display: "flex",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
+            >
+              <button
+                onClick={() => setRouteMode("pedestrian")}
+                style={{
+                  padding: "6px 10px",
+                  border: "none",
+                  background: routeMode === "pedestrian" ? `${accentColor}20` : "transparent",
+                  color: routeMode === "pedestrian" ? accentColor : "var(--muted)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.15s",
+                }}
+                aria-label="Piyoda"
+              >
+                <PersonSimpleWalk size={16} weight="bold" />
+              </button>
+              <button
+                onClick={() => setRouteMode("auto")}
+                style={{
+                  padding: "6px 10px",
+                  border: "none",
+                  borderLeft: "1px solid var(--border)",
+                  background: routeMode === "auto" ? `${accentColor}20` : "transparent",
+                  color: routeMode === "auto" ? accentColor : "var(--muted)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.15s",
+                }}
+                aria-label="Mashina"
+              >
+                <Car size={16} weight="bold" />
+              </button>
+            </div>
+
+            {/* Yopish tugmasi */}
+            <button
+              onClick={() => {
+                setNavigateTarget(null);
+                setRouteInfo(null);
+              }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: "none",
+                background: "var(--border)",
+                color: "var(--muted)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+              aria-label="Yo'nalishni bekor qilish"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content area — header + list */}
@@ -459,6 +600,10 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
           type={type}
           nearest={nearest}
           onPlaceClick={setSelectedPlace}
+          onNavigate={(place) => {
+            setNavigateTarget(place);
+            setRouteInfo(null);
+          }}
         />
       </div>
 
@@ -484,7 +629,7 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
             zIndex: 40,
             transition: "transform 0.15s, box-shadow 0.15s",
           }}
-          aria-label="Hojatxona qo'shish"
+          aria-label="Zarurat qo'shish"
         >
           <Plus size={24} weight="bold" />
         </button>
@@ -659,7 +804,7 @@ function SuggestModal({
                 <Plus size={22} weight="bold" />
               </div>
               <div>
-                <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 2 }}>Hojatxona qo&apos;shish</h3>
+                <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 2 }}>Zarurat qo&apos;shish</h3>
                 <p style={{ fontSize: 12, color: "var(--muted)" }}>Yangi joyni xaritaga taklif qiling</p>
               </div>
             </div>

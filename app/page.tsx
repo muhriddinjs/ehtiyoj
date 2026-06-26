@@ -267,6 +267,9 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
   const [locationError, setLocationError] = useState("");
   const [source, setSource] = useState<"osm" | "fallback" | "">("");
   const [showSuggest, setShowSuggest] = useState(false);
+  const [pickingLocation, setPickingLocation] = useState(false);
+  const [pickedLat, setPickedLat] = useState<number | null>(null);
+  const [pickedLon, setPickedLon] = useState<number | null>(null);
   const [navigateTarget, setNavigateTarget] = useState<Place | null>(null);
   const [routeMode, setRouteMode] = useState<"auto" | "pedestrian">("pedestrian");
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
@@ -344,6 +347,11 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
             navigateTo={navigateTarget}
             routeMode={routeMode}
             onRouteReady={setRouteInfo}
+            pickMode={pickingLocation}
+            onPick={(pLat, pLon) => {
+              setPickedLat(pLat);
+              setPickedLon(pLon);
+            }}
             height="55vh"
           />
         ) : (
@@ -610,10 +618,53 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
         />
       </div>
 
+      {/* Pick mode banner */}
+      {pickingLocation && (
+        <div style={{
+          position: "fixed",
+          top: 16,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 60,
+          background: "#0EA5E9",
+          color: "white",
+          borderRadius: 14,
+          padding: "10px 18px",
+          fontSize: 13,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          boxShadow: "0 4px 20px rgba(14,165,233,0.4)",
+          maxWidth: "calc(100vw - 32px)",
+        }}>
+          <MapPin size={16} weight="fill" />
+          Xaritada joyni bosing
+          <button
+            onClick={() => {
+              setPickingLocation(false);
+              setPickedLat(null);
+              setPickedLon(null);
+            }}
+            style={{ background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 8, padding: "4px 10px", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+          >
+            Bekor
+          </button>
+          {pickedLat && (
+            <button
+              onClick={() => { setPickingLocation(false); setShowSuggest(true); }}
+              style={{ background: "white", border: "none", borderRadius: 8, padding: "4px 10px", color: "#0EA5E9", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+            >
+              Tasdiqlash ✓
+            </button>
+          )}
+        </div>
+      )}
+
       {/* FAB — Hojatxona qo'shish (faqat hojatxona tabida) */}
       {isHojatxona && (
         <button
-          onClick={() => setShowSuggest(true)}
+          onClick={() => { setPickingLocation(true); setPickedLat(null); setPickedLon(null); }}
           style={{
             position: "fixed",
             bottom: 84,
@@ -641,9 +692,10 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
       {/* Suggest Modal */}
       {showSuggest && (
         <SuggestModal
-          lat={userLat}
-          lon={userLon}
-          onClose={() => setShowSuggest(false)}
+          lat={pickedLat ?? userLat}
+          lon={pickedLon ?? userLon}
+          isPicked={pickedLat !== null}
+          onClose={() => { setShowSuggest(false); setPickedLat(null); setPickedLon(null); }}
         />
       )}
     </div>
@@ -656,10 +708,12 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
 function SuggestModal({
   lat,
   lon,
+  isPicked,
   onClose,
 }: {
   lat: number | null;
   lon: number | null;
+  isPicked?: boolean;
   onClose: () => void;
 }) {
   const [name, setName] = useState("");
@@ -858,7 +912,7 @@ function SuggestModal({
               <NavigationArrow size={16} weight="fill" style={{ color: "#0EA5E9", flexShrink: 0 }} />
               <span>
                 {lat && lon
-                  ? `Joylashuv: ${lat.toFixed(4)}, ${lon.toFixed(4)}`
+                  ? `${isPicked ? "Xaritada tanlangan" : "Joriy joylashuv"}: ${lat.toFixed(4)}, ${lon.toFixed(4)}`
                   : "Joylashuv aniqlanmadi"}
               </span>
             </div>

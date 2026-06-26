@@ -36,6 +36,8 @@ type Props = {
   routeMode?: "auto" | "pedestrian";
   onRouteReady?: (info: RouteInfo | null) => void;
   onCenterUser?: () => void;
+  pickMode?: boolean;
+  onPick?: (lat: number, lon: number) => void;
   height?: string;
 };
 
@@ -48,7 +50,7 @@ declare global {
 export default function YandexMap({
   lat, lon, places, type, nearest,
   selectedPlace, navigateTo, routeMode = "auto",
-  onRouteReady, onCenterUser, height = "55vh",
+  onRouteReady, onCenterUser, pickMode, onPick, height = "55vh",
 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -185,6 +187,42 @@ export default function YandexMap({
       }
     };
   }, [loaded, lat, lon, places, type, nearest]);
+
+  // Pick mode — xaritaga bosib joy tanlash
+  const pickMarkerRef = useRef<any>(null);
+  useEffect(() => {
+    if (!loaded || !mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+    const ymaps = window.ymaps;
+
+    if (pickMode) {
+      map.cursors.push("crosshair");
+      const handler = (e: any) => {
+        const coords = e.get("coords");
+        const [pLat, pLon] = coords;
+
+        if (pickMarkerRef.current) {
+          map.geoObjects.remove(pickMarkerRef.current);
+        }
+        const marker = new ymaps.Placemark(coords, { hintContent: "Tanlangan joy" }, {
+          preset: "islands#redDotIcon",
+          zIndex: 2000,
+        });
+        map.geoObjects.add(marker);
+        pickMarkerRef.current = marker;
+        onPick?.(pLat, pLon);
+      };
+      map.events.add("click", handler);
+      return () => {
+        map.events.remove("click", handler);
+        map.cursors.pop("crosshair");
+        if (pickMarkerRef.current) {
+          map.geoObjects.remove(pickMarkerRef.current);
+          pickMarkerRef.current = null;
+        }
+      };
+    }
+  }, [loaded, pickMode, onPick]);
 
   // Tanlangan joyga o'tish
   useEffect(() => {

@@ -1,55 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-
-const SUGGESTIONS_FILE = path.join(process.cwd(), "data", "suggestions.json");
-
-// Ma'lumotlar papkasini va faylini yaratish
-async function ensureFile() {
-  const dir = path.dirname(SUGGESTIONS_FILE);
-  try {
-    await fs.access(dir);
-  } catch {
-    await fs.mkdir(dir, { recursive: true });
-  }
-  try {
-    await fs.access(SUGGESTIONS_FILE);
-  } catch {
-    await fs.writeFile(SUGGESTIONS_FILE, "[]", "utf-8");
-  }
-}
+import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, note, lat, lon, timestamp } = body;
+    const { name, note, lat, lon } = body;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json({ error: "Nom kiritilishi shart" }, { status: 400 });
     }
 
-    await ensureFile();
+    const db = supabaseAdmin();
+    const { data, error } = await db
+      .from("suggestions")
+      .insert({
+        name: name.trim(),
+        note: note?.trim() || "",
+        lat: lat || null,
+        lon: lon || null,
+      })
+      .select()
+      .single();
 
-    // Mavjud takliflarni o'qish
-    const raw = await fs.readFile(SUGGESTIONS_FILE, "utf-8");
-    const suggestions = JSON.parse(raw);
+    if (error) {
+      console.error("Suggest insert error:", error);
+      return NextResponse.json({ error: "Server xatoligi" }, { status: 500 });
+    }
 
-    // Yangi taklif
-    const newSuggestion = {
-      id: Date.now(),
-      name: name.trim(),
-      note: note?.trim() || "",
-      lat: lat || null,
-      lon: lon || null,
-      timestamp: timestamp || new Date().toISOString(),
-      status: "pending",
-    };
-
-    suggestions.push(newSuggestion);
-
-    await fs.writeFile(SUGGESTIONS_FILE, JSON.stringify(suggestions, null, 2), "utf-8");
-
-    return NextResponse.json({ success: true, suggestion: newSuggestion });
+    return NextResponse.json({ success: true, suggestion: data });
   } catch (err) {
     console.error("Suggest API error:", err);
     return NextResponse.json({ error: "Server xatoligi" }, { status: 500 });
@@ -58,10 +36,14 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    await ensureFile();
-    const raw = await fs.readFile(SUGGESTIONS_FILE, "utf-8");
-    const suggestions = JSON.parse(raw);
-    return NextResponse.json({ suggestions });
+    const db = supabaseAdmin();
+    const { data, error } = await db
+      .from("suggestions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) return NextResponse.json({ suggestions: [] });
+    return NextResponse.json({ suggestions: data });
   } catch {
     return NextResponse.json({ suggestions: [] });
   }

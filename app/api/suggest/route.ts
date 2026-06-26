@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Suggest insert error:", error);
-      return NextResponse.json({ error: "Server xatoligi" }, { status: 500 });
+      console.error("Suggest insert error:", JSON.stringify(error));
+      return NextResponse.json({ error: "Server xatoligi", detail: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, suggestion: data });

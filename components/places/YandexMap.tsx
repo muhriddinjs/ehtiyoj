@@ -195,12 +195,12 @@ export default function YandexMap({
     const map = mapInstanceRef.current;
     const ymaps = window.ymaps;
 
+    const el = map.container.getElement() as HTMLElement;
     if (pickMode) {
-      map.cursors.push("crosshair");
+      el.style.cursor = "crosshair";
       const handler = (e: any) => {
         const coords = e.get("coords");
         const [pLat, pLon] = coords;
-
         if (pickMarkerRef.current) {
           map.geoObjects.remove(pickMarkerRef.current);
         }
@@ -215,7 +215,7 @@ export default function YandexMap({
       map.events.add("click", handler);
       return () => {
         map.events.remove("click", handler);
-        map.cursors.pop("crosshair");
+        el.style.cursor = "";
         if (pickMarkerRef.current) {
           map.geoObjects.remove(pickMarkerRef.current);
           pickMarkerRef.current = null;

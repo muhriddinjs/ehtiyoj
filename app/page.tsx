@@ -271,6 +271,13 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
   const [pickedLat, setPickedLat] = useState<number | null>(null);
   const [pickedLon, setPickedLon] = useState<number | null>(null);
   const [navigateTarget, setNavigateTarget] = useState<Place | null>(null);
+
+  const handlePick = useCallback((pLat: number, pLon: number) => {
+    setPickedLat(pLat);
+    setPickedLon(pLon);
+    setPickingLocation(false);
+    setShowSuggest(true);
+  }, []);
   const [routeMode, setRouteMode] = useState<"auto" | "pedestrian">("pedestrian");
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
 
@@ -348,10 +355,7 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
             routeMode={routeMode}
             onRouteReady={setRouteInfo}
             pickMode={pickingLocation}
-            onPick={(pLat, pLon) => {
-              setPickedLat(pLat);
-              setPickedLon(pLon);
-            }}
+            onPick={handlePick}
             height="55vh"
           />
         ) : (
@@ -625,7 +629,7 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
           top: 16,
           left: "50%",
           transform: "translateX(-50%)",
-          zIndex: 60,
+          zIndex: 200,
           background: "#0EA5E9",
           color: "white",
           borderRadius: 14,
@@ -637,34 +641,23 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
           gap: 10,
           boxShadow: "0 4px 20px rgba(14,165,233,0.4)",
           maxWidth: "calc(100vw - 32px)",
+          pointerEvents: "auto",
         }}>
           <MapPin size={16} weight="fill" />
           Xaritada joyni bosing
           <button
-            onClick={() => {
-              setPickingLocation(false);
-              setPickedLat(null);
-              setPickedLon(null);
-            }}
-            style={{ background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 8, padding: "4px 10px", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+            onClick={() => { setPickingLocation(false); setPickedLat(null); setPickedLon(null); setShowSuggest(true); }}
+            style={{ background: "white", border: "none", borderRadius: 8, padding: "4px 10px", color: "#0EA5E9", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
           >
             Bekor
           </button>
-          {pickedLat && (
-            <button
-              onClick={() => { setPickingLocation(false); setShowSuggest(true); }}
-              style={{ background: "white", border: "none", borderRadius: 8, padding: "4px 10px", color: "#0EA5E9", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
-            >
-              Tasdiqlash ✓
-            </button>
-          )}
         </div>
       )}
 
       {/* FAB — Hojatxona qo'shish (faqat hojatxona tabida) */}
       {isHojatxona && (
         <button
-          onClick={() => { setPickingLocation(true); setPickedLat(null); setPickedLon(null); }}
+          onClick={() => { setPickedLat(null); setPickedLon(null); setShowSuggest(true); }}
           style={{
             position: "fixed",
             bottom: 84,
@@ -695,6 +688,7 @@ function MapScreen({ type }: { type: "masjid" | "hojatxona" }) {
           lat={pickedLat ?? userLat}
           lon={pickedLon ?? userLon}
           isPicked={pickedLat !== null}
+          onPickFromMap={() => { setShowSuggest(false); setPickingLocation(true); }}
           onClose={() => { setShowSuggest(false); setPickedLat(null); setPickedLon(null); }}
         />
       )}
@@ -709,11 +703,13 @@ function SuggestModal({
   lat,
   lon,
   isPicked,
+  onPickFromMap,
   onClose,
 }: {
   lat: number | null;
   lon: number | null;
   isPicked?: boolean;
+  onPickFromMap?: () => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState("");
@@ -910,11 +906,20 @@ function SuggestModal({
               }}
             >
               <NavigationArrow size={16} weight="fill" style={{ color: "#0EA5E9", flexShrink: 0 }} />
-              <span>
+              <span style={{ flex: 1 }}>
                 {lat && lon
                   ? `${isPicked ? "Xaritada tanlangan" : "Joriy joylashuv"}: ${lat.toFixed(4)}, ${lon.toFixed(4)}`
                   : "Joylashuv aniqlanmadi"}
               </span>
+              {onPickFromMap && (
+                <button
+                  type="button"
+                  onClick={onPickFromMap}
+                  style={{ background: "rgba(14,165,233,0.15)", border: "1px solid rgba(14,165,233,0.3)", borderRadius: 8, padding: "4px 10px", color: "#0EA5E9", cursor: "pointer", fontWeight: 700, fontSize: 11, whiteSpace: "nowrap", flexShrink: 0 }}
+                >
+                  Xaritada belgilash
+                </button>
+              )}
             </div>
 
             {/* Note */}

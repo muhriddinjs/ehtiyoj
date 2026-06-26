@@ -28,7 +28,10 @@ type Place = {
   lon: number;
   distM: number;
   tags: string[];
-  address: string;
+  address?: string;
+  phone?: string;
+  openingHours?: string;
+  website?: string;
 };
 
 type Props = {

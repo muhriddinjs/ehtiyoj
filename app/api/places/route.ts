@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// ---- Simple in-memory cache (10 daqiqa TTL) ----
+const _cache = new Map<string, { data: unknown; ts: number }>();
+const CACHE_TTL = 10 * 60 * 1000;
+
+function fromCache(key: string) {
+  const entry = _cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { _cache.delete(key); return null; }
+  return entry.data;
+}
+function toCache(key: string, data: unknown) {
+  _cache.set(key, { data, ts: Date.now() });
+}
+
 // ---- Toshkent fallback data ----
 const FALLBACK_MOSQUES = [
   { id: 1, name: "Minor masjidi", lat: 41.2986, lon: 69.2401, tags: ["Masjid", "Tahorat bor"], address: "Islom Karimov ko'chasi" },
@@ -42,20 +56,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "lat, lon va type kerak" }, { status: 400 });
   }
 
-  // Overpass API — GET so'rov (POST 406 beradi, GET ishlatamiz)
+  const cacheKey = `${type}:${parseFloat(lat).toFixed(2)}:${parseFloat(lon).toFixed(2)}:${radius}`;
+  const cached = fromCache(cacheKey);
+  if (cached) return NextResponse.json(cached);
+
+  // Overpass API — GET so'rov
   let overpassQuery = "";
   if (type === "masjid") {
+    // relation query olib tashlandi — juda qimmat va rate-limit sabab
     overpassQuery =
-      `[out:json][timeout:12];` +
-      `(node[amenity=place_of_worship][religion=muslim](around:${radius},${lat},${lon});` +
+      `[out:json][timeout:15];` +
+      `(` +
+      `node[amenity=place_of_worship][religion=muslim](around:${radius},${lat},${lon});` +
       `way[amenity=place_of_worship][religion=muslim](around:${radius},${lat},${lon});` +
-      `node[building=mosque](around:${radius},${lat},${lon}););` +
+      `node[building=mosque](around:${radius},${lat},${lon});` +
+      `way[building=mosque](around:${radius},${lat},${lon});` +
+      `);` +
       `out center;`;
   } else {
     overpassQuery =
-      `[out:json][timeout:12];` +
+      `[out:json][timeout:15];` +
+      `(` +
       `node[amenity=toilets](around:${radius},${lat},${lon});` +
-      `out;`;
+      `way[amenity=toilets](around:${radius},${lat},${lon});` +
+      `);` +
+      `out center;`;
   }
 
   try {
@@ -119,10 +144,21 @@ export async function GET(req: NextRequest) {
       .filter(Boolean)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .sort((a: any, b: any) => a.distM - b.distM)
-      .slice(0, 25);
+      // Deduplicate close elements (same mosque can be both node and way)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .reduce((acc: any[], current: any) => {
+        const isDuplicate = acc.find((p) => getDistance(p.lat, p.lon, current.lat, current.lon) < 50);
+        if (!isDuplicate) {
+          acc.push(current);
+        }
+        return acc;
+      }, [])
+      .slice(0, 50);
 
     if (places.length === 0) throw new Error("empty");
-    return NextResponse.json({ places, source: "osm" });
+    const result = { places, source: "osm" };
+    toCache(cacheKey, result);
+    return NextResponse.json(result);
   } catch (err) {
     // Fallback — Toshkent statik ma'lumotlari
     console.log("Overpass fallback:", err);

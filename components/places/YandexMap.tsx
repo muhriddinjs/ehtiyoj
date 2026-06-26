@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { MapTrifold } from "@phosphor-icons/react";
+import { MapTrifold, Crosshair } from "@phosphor-icons/react";
 
 type Place = {
   id: number;
@@ -12,6 +12,10 @@ type Place = {
   lon: number;
   distM: number;
   tags: string[];
+  address?: string;
+  phone?: string;
+  openingHours?: string;
+  website?: string;
 };
 
 export type RouteInfo = {
@@ -31,6 +35,7 @@ type Props = {
   navigateTo?: Place | null;
   routeMode?: "auto" | "pedestrian";
   onRouteReady?: (info: RouteInfo | null) => void;
+  onCenterUser?: () => void;
   height?: string;
 };
 
@@ -43,7 +48,7 @@ declare global {
 export default function YandexMap({
   lat, lon, places, type, nearest,
   selectedPlace, navigateTo, routeMode = "auto",
-  onRouteReady, height = "55vh",
+  onRouteReady, onCenterUser, height = "55vh",
 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -77,7 +82,7 @@ export default function YandexMap({
     }
     const script = document.createElement("script");
     script.id = "ymaps-script";
-    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${apiKey}&lang=uz_UZ`;
+    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${apiKey}&lang=uz_UZ&load=package.full`;
     script.async = true;
     script.onload = () => {
       window.ymaps.ready(() => setLoaded(true));
@@ -148,7 +153,15 @@ export default function YandexMap({
         [place.lat, place.lon],
         {
           balloonContentHeader: `<strong>${place.name}</strong>`,
-          balloonContentBody: `<span style="color:#64748B;font-size:13px">${dist} • ${place.tags.join(", ")}</span>`,
+          balloonContentBody: `
+            <div style="font-size:13px; color:var(--text); line-height: 1.5;">
+              <div style="color:#64748B; margin-bottom:6px;">${dist} • ${place.tags.join(", ")}</div>
+              ${place.address ? `<div style="margin-bottom:4px;">📍 ${place.address}</div>` : ""}
+              ${place.openingHours ? `<div style="margin-bottom:4px;">🕒 ${place.openingHours}</div>` : ""}
+              ${place.phone ? `<div style="margin-bottom:4px;">📞 <a href="tel:${place.phone}" style="color:#0EA5E9; text-decoration:none;">${place.phone}</a></div>` : ""}
+              ${place.website ? `<div style="margin-bottom:4px;">🌐 <a href="${place.website.startsWith('http') ? place.website : `https://${place.website}`}" target="_blank" style="color:#0EA5E9; text-decoration:none;">Veb-sayt</a></div>` : ""}
+            </div>
+          `,
           hintContent: place.name,
         },
         {
@@ -202,34 +215,44 @@ export default function YandexMap({
     const ymaps = window.ymaps;
     const map = mapInstanceRef.current;
 
-    const multiRoute = new ymaps.multiRouter.MultiRoute(
-      {
-        referencePoints: [
-          [lat, lon],
-          [navigateTo.lat, navigateTo.lon],
-        ],
-        params: {
-          routingMode: routeMode === "auto" ? "auto" : "pedestrian",
-          results: 1,
-        },
-      },
-      {
-        // Yo'nalish chizig'i uslubi
-        routeActiveStrokeWidth: 6,
-        routeActiveStrokeColor: routeMode === "auto" ? "#0EA5E9" : "#059669",
-        routeActiveStrokeStyle: "solid",
-        // Boshlang'ich va yakuniy nuqtalarni yashirish (bizda custom markerlar bor)
-        wayPointStartVisible: false,
-        wayPointFinishVisible: false,
-        // Oraliq nuqtalarni yashirish
-        pinVisible: false,
-        // Balloon va hint o'chirish
-        boundsAutoApply: true,
-      }
-    );
+    if (!ymaps.multiRouter) {
+      console.error("Yandex Maps multiRouter is not loaded.");
+      // Callback with fallback info if routing module fails to load
+      onRouteReady?.({
+        lengthM: navigateTo.distM,
+        timeMin: Math.max(1, Math.round(navigateTo.distM / (routeMode === "auto" ? 500 : 80))),
+        mode: routeMode,
+        placeName: navigateTo.name,
+      });
+      return;
+    }
 
-    // Yo'nalish tayyor bo'lganda ma'lumotlarni olish
-    multiRoute.model.events.add("requestsuccess", () => {
+    try {
+      const multiRoute = new ymaps.multiRouter.MultiRoute(
+        {
+          referencePoints: [
+            [lat, lon],
+            [navigateTo.lat, navigateTo.lon],
+          ],
+          params: {
+            routingMode: routeMode === "auto" ? "auto" : "pedestrian",
+            results: 1,
+          },
+        },
+        {
+          // Yo'nalish chizig'i uslubi
+          routeActiveStrokeWidth: 6,
+          routeActiveStrokeColor: routeMode === "auto" ? "#0EA5E9" : "#059669",
+          routeActiveStrokeStyle: "solid",
+          wayPointStartVisible: false,
+          wayPointFinishVisible: false,
+          pinVisible: false,
+          boundsAutoApply: true,
+        }
+      );
+
+      // Yo'nalish tayyor bo'lganda ma'lumotlarni olish
+      multiRoute.model.events.add("requestsuccess", () => {
       try {
         const activeRoute = multiRoute.getActiveRoute();
         if (activeRoute) {
@@ -256,17 +279,20 @@ export default function YandexMap({
       }
     });
 
-    map.geoObjects.add(multiRoute);
-    routeRef.current = multiRoute;
+      map.geoObjects.add(multiRoute);
+      routeRef.current = multiRoute;
 
-    // Xaritani yo'nalishga moslashtirish
-    map.setBounds(
-      [
-        [Math.min(lat, navigateTo.lat) - 0.003, Math.min(lon, navigateTo.lon) - 0.003],
-        [Math.max(lat, navigateTo.lat) + 0.003, Math.max(lon, navigateTo.lon) + 0.003],
-      ],
-      { duration: 400, checkZoomRange: true }
-    );
+      // Xaritani yo'nalishga moslashtirish
+      map.setBounds(
+        [
+          [Math.min(lat, navigateTo.lat) - 0.003, Math.min(lon, navigateTo.lon) - 0.003],
+          [Math.max(lat, navigateTo.lat) + 0.003, Math.max(lon, navigateTo.lon) + 0.003],
+        ],
+        { duration: 400, checkZoomRange: true }
+      );
+    } catch (err) {
+      console.error("Error creating route:", err);
+    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, navigateTo, routeMode, lat, lon, clearRoute]);
@@ -295,9 +321,41 @@ export default function YandexMap({
 
   return (
     <div
-      style={{ height, overflow: "hidden" }}
+      style={{ height, overflow: "hidden", position: "relative" }}
     >
       <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
+
+      {/* Meni topish tugmasi */}
+      <button
+        onClick={() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter([lat, lon], 16, { duration: 400 });
+          }
+          onCenterUser?.();
+        }}
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 14,
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          border: "1px solid var(--border)",
+          background: "var(--surface)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#0EA5E9",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+          zIndex: 10,
+          transition: "transform 0.15s",
+        }}
+        aria-label="Meni topish"
+        title="Joylashuvimga qaytish"
+      >
+        <Crosshair size={20} weight="bold" />
+      </button>
     </div>
   );
 }
